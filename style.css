@@ -1,0 +1,36 @@
+* {
+  box-sizing: border-box;
+}
+
+#main{
+  width: 600px;
+  margin: auto;
+}
+
+.btn-div {
+	margin: auto;
+	width: 100px;
+	height: 25px
+}
+
+.btn-div button {
+	width: 100%;
+	height: 100%;
+}
+
+.row {
+  display: flex;
+}
+
+.off {
+  width: 10px;
+  height: 10px;
+  border: 1px solid;
+}
+
+.on {
+  background: green;
+  width: 10px;
+  height: 10px;
+  border: solid 1px;
+}
