@@ -1,21 +1,37 @@
+var styleSheet;
+(function(){
+	var styleEl = document.createElement('style');
+	document.head.appendChild(styleEl);
+	styleSheet = styleEl.sheet;
+})()
+
+
+
+
 var params = {
-	height: Math.floor(window.screen.availHeight / 15),
-	length: Math.floor(window.screen.availWidth / 15),
+	cellSize: 15,
 	// height: 50,
 	// length: 50,
+	height: Math.ceil(window.screen.availHeight / 14),
+	length: Math.ceil(window.screen.availWidth / 14),
 	randomBirth: false,
-	spawnRate: 0.5,
-	interval: 75
+	spawnRate: 0.25
 };
 
 var mem = {
 	randGrid: [],
 	score: [],
-	cycle: 0
 };
 
 
-(function() {
+function prepGrid() {
+	while(params.height * params.length > 5625) {
+		params.cellSize += 1;
+		params.height = Math.ceil(window.screen.availHeight / (params.cellSize - 1));
+		params.length = Math.ceil(window.screen.availWidth / (params.cellSize - 1));
+	}
+
+	styleSheet.insertRule(`.row div {width: ${params.cellSize}px; height: ${params.cellSize}px;}`, 0);
 	for (var i = 0; i < params.height; i++) {
 		mem.randGrid[i] = [];
 		mem.score[i] = [];
@@ -25,7 +41,9 @@ var mem = {
 			mem.randGrid[i][j] = num;
 		}
 	}
-})();
+};
+
+prepGrid();
 
 // </main>
 function genNewGridState(cst) {
@@ -36,8 +54,8 @@ function genNewGridState(cst) {
 	for(var j = 0; j < cst[i].length; j++) {
     mem.score[i][j] = 0; }}
 
-	var ht = params.height - 1;
-	var lh = params.length - 1;
+		var ht = cst.length - 1;
+		var lh = cst[0].length - 1;
 
 	function passScore(row, col) {
 		var rowTop = row-1, rowBot = row+1, colL = col-1, colR = col+1;
@@ -89,28 +107,29 @@ function genNewGridState(cst) {
 
 	for (var i = 0; i <= ht; i++) {
 		for (var j = 1; j < lh; j++) {
-			if (cst[i][j]) {passScore(i, j)}
+			if (cst[i][j] > 0) {passScore(i, j)}
 		}}
 
 	for (var i = 1; i < ht; i++) {
-		if (cst[i][0]) {leftColPass(i, 0)}
+		if (cst[i][0] > 0) {leftColPass(i, 0)}
 	}
 
 	for (var i = 1; i < ht; i++) {
-		if (cst[i][lh]) {rightColPass(i, lh)}
+		if (cst[i][lh] > 0) {rightColPass(i, lh)}
 	}
 
 		for (var i = 0; i < score.length; i++) {
 			for (var j = 0; j < score[i].length; j++) {
-				if (score[i][j] > 3 || score[i][j] < 2) {fts[i][j] = 0}
-				else if (score[i][j] === 3) {fts[i][j] += 1}
-				else if (score[i][j] === 2 && cst[i][j] > 0) {fts[i][j] += 1}
-				else {fts[i][j] = 0}
+				if (cst[i][j] == 0 && score[i][j] == 0) {}//{fts[i][j] = 0} // stay empty
+				else if (cst[i][j] >= 1 && (score[i][j] > 3 || score[i][j] < 2)) {fts[i][j] = -7} // die
+				else if (cst[i][j] <= 0 && score[i][j] == 3) {fts[i][j] = 1} // born
+				else if (cst[i][j] >= 1 && (score[i][j] == 2 || score[i][j] == 3)) {fts[i][j] += 1} // stay alive
+				else if (cst[i][j] < 0) {fts[i][j] += 1} // was dead ------ must stay last
 			}
 		}
 		if (params.randomBirth) {
 			var h = Math.floor(Math.random() * ht);
-			var l = Math.floor(Math.random() * lh)
+			var l = Math.floor(Math.random() * lh);
 			if (!fts[h][l]){fts[h][l] = 1}
 		}
 
@@ -125,44 +144,97 @@ function genNewGridState(cst) {
 
 
 // react //
+// </cell>
 function Cell(props) {
-	return(
-		<div
-			className={ props.cellState ? 'on' : 'off' }
-			onClick={() => props.onClick(props.row, props.col)}
-			style={props.cellState? {background:'hsl('+((190)+props.cellState*5)+', 67%, 68%)'}:{}}
-		/>)
-}
+	var color = {};
+	var className = 'off';
+		if (props.cellState > 0) {
+			className = 'on';
+			color = {background:'hsl('+(162+(props.cellState*10))+', 58%, 55%)'};
+		}
+		else if (props.cellState < 0) {
+			color = {
+				background: 'hsl(162, 66%, '+(66+props.cellState*0.83)+'%)',
+				borderRadius: '25%'
+			}
+		}
+		return(
+			<div
+				className={className}
+				style={color}
+				onClick={() => props.onClick(props.row, props.col)}
+			/>);
+	}
 
+// </row>
 function Row(props) {
-	var preRenderRow = props.rowState.map((x, i) => <Cell key={i} col={i} row={props.row} cellState={x} onClick={props.onClick}/>);
-	return <div className='row'>{preRenderRow}</div>
-}
+		var preRenderRow = props.rowState.map((x, i) => <Cell key={i} col={i} row={props.row} cellState={x} onClick={props.onClick}/>);
+		return <div className='row'>{preRenderRow}</div>;
+	}
 
-class Main extends React.Component {
+var perf = Date.now();	// perf
+var total = 0;					// perf
+// </grid>
+class Grid extends React.Component {
 	constructor(props) {
 		super(props);
 		this.state = {
-			gridState: this.props.grid
+			gridState: this.props.grid,
+			cycles: 0,
+			delay: 75
 		}
 		this.clickCell = this.clickCell.bind(this);
+		// this.cellSize = this.cellSize.bind(this);
 	}
 
 	clickCell(r, c) {
-		if(!this.state.gridState[r][c]) {this.setState({})}
+		// this.state.gridState.map( x => console.log(x) );
+		var tempGrid = [];
+		this.state.gridState.map( (x, i) => tempGrid.push(x) );
+		if(!tempGrid[r][c]) {tempGrid[r][c] = 1}
+		else {tempGrid[r][c] = 0}
+		this.setState({gridState: tempGrid});
 	}
 
+	// cellSize(size) {
+	// 	mem.cycles = 0;
+	// 	params.cellSize = size;
+	// 	params.height = Math.floor(window.screen.availHeight / size);
+	// 	params.length = Math.floor(window.screen.availWidth / size);
+	// 	styleSheet.deleteRule(0);
+	// 	styleSheet.insertRule(`.row div {width: ${size}px;height: ${size}px;}`, 0);
+	// 	prepGrid();
+	// 	this.setState({gridState: mem.randGrid});
+	// }
+
 	componentDidMount() {
-		this.interv = setInterval(() => {this.setState({gridState: genNewGridState(this.state.gridState)})}, params.interval);
+		this.interv = setInterval(() => {
+			this.setState({
+				gridState: genNewGridState(this.state.gridState),
+				cycles: this.state.cycles + 1
+			});
+			total += perf = Date.now() - perf;
+			// if(this.state.cycles % 100 === 0 || this.state.cycles < 31) {console.log(this.state.cycles, '-', total / this.state.cycles)}
+			perf = Date.now();
+
+		}, this.state.delay);
 	}
 
 	render() {
-		var preRenderGrid = this.state.gridState.map((x, i) => <Row key={i} row={i} rowState={x} />);
+		var preRenderGrid = this.state.gridState.map(
+			(x, i) =>
+				<Row
+					key={i}
+					row={i}
+					rowState={x}
+					onClick={this.clickCell}
+				/>
+		);
 		return(
 			<section id='grid'>{preRenderGrid}</section>
 		);
 	}
 }
 
-ReactDOM.render(<Main grid={genNewGridState(mem.randGrid, mem.score)}/>, document.getElementById('main'));
+ReactDOM.render(<Grid grid={genNewGridState(mem.randGrid, mem.score)}/>, document.getElementById('main'));
 // react //

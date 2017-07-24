@@ -8,23 +8,36 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
+var styleSheet;
+(function () {
+	var styleEl = document.createElement('style');
+	document.head.appendChild(styleEl);
+	styleSheet = styleEl.sheet;
+})();
+
 var params = {
-	height: Math.floor(window.screen.availHeight / 15),
-	length: Math.floor(window.screen.availWidth / 15),
+	cellSize: 15,
 	// height: 50,
 	// length: 50,
+	height: Math.ceil(window.screen.availHeight / 14),
+	length: Math.ceil(window.screen.availWidth / 14),
 	randomBirth: false,
-	spawnRate: 0.5,
-	interval: 75
+	spawnRate: 0.25
 };
 
 var mem = {
 	randGrid: [],
-	score: [],
-	cycle: 0
+	score: []
 };
 
-(function () {
+function prepGrid() {
+	while (params.height * params.length > 5625) {
+		params.cellSize += 1;
+		params.height = Math.ceil(window.screen.availHeight / (params.cellSize - 1));
+		params.length = Math.ceil(window.screen.availWidth / (params.cellSize - 1));
+	}
+
+	styleSheet.insertRule('.row div {width: ' + params.cellSize + 'px; height: ' + params.cellSize + 'px;}', 0);
 	for (var i = 0; i < params.height; i++) {
 		mem.randGrid[i] = [];
 		mem.score[i] = [];
@@ -34,7 +47,9 @@ var mem = {
 			mem.randGrid[i][j] = num;
 		}
 	}
-})();
+};
+
+prepGrid();
 
 // </main>
 function genNewGridState(cst) {
@@ -47,8 +62,8 @@ function genNewGridState(cst) {
 		}
 	}
 
-	var ht = params.height - 1;
-	var lh = params.length - 1;
+	var ht = cst.length - 1;
+	var lh = cst[0].length - 1;
 
 	function passScore(row, col) {
 		var rowTop = row - 1,
@@ -116,35 +131,39 @@ function genNewGridState(cst) {
 
 	for (var i = 0; i <= ht; i++) {
 		for (var j = 1; j < lh; j++) {
-			if (cst[i][j]) {
+			if (cst[i][j] > 0) {
 				passScore(i, j);
 			}
 		}
 	}
 
 	for (var i = 1; i < ht; i++) {
-		if (cst[i][0]) {
+		if (cst[i][0] > 0) {
 			leftColPass(i, 0);
 		}
 	}
 
 	for (var i = 1; i < ht; i++) {
-		if (cst[i][lh]) {
+		if (cst[i][lh] > 0) {
 			rightColPass(i, lh);
 		}
 	}
 
 	for (var i = 0; i < score.length; i++) {
 		for (var j = 0; j < score[i].length; j++) {
-			if (score[i][j] > 3 || score[i][j] < 2) {
-				fts[i][j] = 0;
-			} else if (score[i][j] === 3) {
-				fts[i][j] += 1;
-			} else if (score[i][j] === 2 && cst[i][j] > 0) {
-				fts[i][j] += 1;
-			} else {
-				fts[i][j] = 0;
-			}
+			if (cst[i][j] == 0 && score[i][j] == 0) {} //{fts[i][j] = 0} // stay empty
+			else if (cst[i][j] >= 1 && (score[i][j] > 3 || score[i][j] < 2)) {
+					fts[i][j] = -7;
+				} // die
+				else if (cst[i][j] <= 0 && score[i][j] == 3) {
+						fts[i][j] = 1;
+					} // born
+					else if (cst[i][j] >= 1 && (score[i][j] == 2 || score[i][j] == 3)) {
+							fts[i][j] += 1;
+						} // stay alive
+						else if (cst[i][j] < 0) {
+								fts[i][j] += 1;
+							} // was dead ------ must stay last
 		}
 	}
 	if (params.randomBirth) {
@@ -165,16 +184,29 @@ function genNewGridState(cst) {
 }
 
 // react //
+// </cell>
 function Cell(props) {
+	var color = {};
+	var className = 'off';
+	if (props.cellState > 0) {
+		className = 'on';
+		color = { background: 'hsl(' + (162 + props.cellState * 10) + ', 58%, 55%)' };
+	} else if (props.cellState < 0) {
+		color = {
+			background: 'hsl(162, 66%, ' + (66 + props.cellState * 0.83) + '%)',
+			borderRadius: '25%'
+		};
+	}
 	return React.createElement('div', {
-		className: props.cellState ? 'on' : 'off',
+		className: className,
+		style: color,
 		onClick: function onClick() {
 			return props.onClick(props.row, props.col);
-		},
-		style: props.cellState ? { background: 'hsl(' + (190 + props.cellState * 5) + ', 67%, 68%)' } : {}
+		}
 	});
 }
 
+// </row>
 function Row(props) {
 	var preRenderRow = props.rowState.map(function (x, i) {
 		return React.createElement(Cell, { key: i, col: i, row: props.row, cellState: x, onClick: props.onClick });
@@ -186,42 +218,82 @@ function Row(props) {
 	);
 }
 
-var Main = function (_React$Component) {
-	_inherits(Main, _React$Component);
+var perf = Date.now(); // perf
+var total = 0; // perf
+// </grid>
 
-	function Main(props) {
-		_classCallCheck(this, Main);
+var Grid = function (_React$Component) {
+	_inherits(Grid, _React$Component);
 
-		var _this = _possibleConstructorReturn(this, (Main.__proto__ || Object.getPrototypeOf(Main)).call(this, props));
+	function Grid(props) {
+		_classCallCheck(this, Grid);
+
+		var _this = _possibleConstructorReturn(this, (Grid.__proto__ || Object.getPrototypeOf(Grid)).call(this, props));
 
 		_this.state = {
-			gridState: _this.props.grid
+			gridState: _this.props.grid,
+			cycles: 0,
+			delay: 75
 		};
 		_this.clickCell = _this.clickCell.bind(_this);
+		// this.cellSize = this.cellSize.bind(this);
 		return _this;
 	}
 
-	_createClass(Main, [{
+	_createClass(Grid, [{
 		key: 'clickCell',
 		value: function clickCell(r, c) {
-			if (!this.state.gridState[r][c]) {
-				this.setState({});
+			// this.state.gridState.map( x => console.log(x) );
+			var tempGrid = [];
+			this.state.gridState.map(function (x, i) {
+				return tempGrid.push(x);
+			});
+			if (!tempGrid[r][c]) {
+				tempGrid[r][c] = 1;
+			} else {
+				tempGrid[r][c] = 0;
 			}
+			this.setState({ gridState: tempGrid });
 		}
+
+		// cellSize(size) {
+		// 	mem.cycles = 0;
+		// 	params.cellSize = size;
+		// 	params.height = Math.floor(window.screen.availHeight / size);
+		// 	params.length = Math.floor(window.screen.availWidth / size);
+		// 	styleSheet.deleteRule(0);
+		// 	styleSheet.insertRule(`.row div {width: ${size}px;height: ${size}px;}`, 0);
+		// 	prepGrid();
+		// 	this.setState({gridState: mem.randGrid});
+		// }
+
 	}, {
 		key: 'componentDidMount',
 		value: function componentDidMount() {
 			var _this2 = this;
 
 			this.interv = setInterval(function () {
-				_this2.setState({ gridState: genNewGridState(_this2.state.gridState) });
-			}, params.interval);
+				_this2.setState({
+					gridState: genNewGridState(_this2.state.gridState),
+					cycles: _this2.state.cycles + 1
+				});
+				total += perf = Date.now() - perf;
+				// if(this.state.cycles % 100 === 0 || this.state.cycles < 31) {console.log(this.state.cycles, '-', total / this.state.cycles)}
+				perf = Date.now();
+			}, this.state.delay);
 		}
 	}, {
 		key: 'render',
 		value: function render() {
+			var _this3 = this;
+
 			var preRenderGrid = this.state.gridState.map(function (x, i) {
-				return React.createElement(Row, { key: i, row: i, rowState: x });
+				return React.createElement(Row, {
+					key: i,
+					row: i,
+					rowState: x,
+					onClick: _this3.clickCell
+				});
 			});
 			return React.createElement(
 				'section',
@@ -231,8 +303,8 @@ var Main = function (_React$Component) {
 		}
 	}]);
 
-	return Main;
+	return Grid;
 }(React.Component);
 
-ReactDOM.render(React.createElement(Main, { grid: genNewGridState(mem.randGrid, mem.score) }), document.getElementById('main'));
+ReactDOM.render(React.createElement(Grid, { grid: genNewGridState(mem.randGrid, mem.score) }), document.getElementById('main'));
 // react //
