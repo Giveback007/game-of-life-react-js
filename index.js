@@ -1,31 +1,54 @@
 'use strict';
 
-var gridSize = 60; // grid size
-var spawnRate = 0.50; // random array spawn rate (50% = 0.5)
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var filler = [];
-function generateGrid() {
-	var randomArr = [];
-	for (var i = 0; i < gridSize; i++) {
-		randomArr[i] = [];
-		filler[i] = [];
-		for (var j = 0; j < gridSize; j++) {
-			var random = Math.random() < spawnRate;
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var params = {
+	height: Math.floor(window.screen.availHeight / 15),
+	length: Math.floor(window.screen.availWidth / 15),
+	// height: 50,
+	// length: 50,
+	randomBirth: false,
+	spawnRate: 0.5,
+	interval: 75
+};
+
+var mem = {
+	randGrid: [],
+	score: [],
+	cycle: 0
+};
+
+(function () {
+	for (var i = 0; i < params.height; i++) {
+		mem.randGrid[i] = [];
+		mem.score[i] = [];
+		for (var j = 0; j < params.length; j++) {
+			var random = Math.random() < params.spawnRate;
 			var num = random ? 1 : 0;
-			randomArr[i][j] = num;
-			filler[i][j] = 0;
+			mem.randGrid[i][j] = num;
 		}
 	}
-	return randomArr;
-}
+})();
 
 // </main>
-function futureState(currentState) {
-	// console.time('fts');
-	var cst = currentState.slice();
-	var score = JSON.parse(JSON.stringify(filler));
-	var ht = cst.length - 1;
-	var lh = cst[0].length - 1;
+function genNewGridState(cst) {
+	var fts = [];
+	var score = mem.score;
+	for (var i = 0; i < cst.length; i++) {
+		fts[i] = cst[i].slice();
+		for (var j = 0; j < cst[i].length; j++) {
+			mem.score[i][j] = 0;
+		}
+	}
+
+	var ht = params.height - 1;
+	var lh = params.length - 1;
 
 	function passScore(row, col) {
 		var rowTop = row - 1,
@@ -99,70 +122,117 @@ function futureState(currentState) {
 		}
 	}
 
-	for (var i = 1; i < lh; i++) {
+	for (var i = 1; i < ht; i++) {
 		if (cst[i][0]) {
 			leftColPass(i, 0);
 		}
 	}
 
-	for (var i = 1; i < lh; i++) {
+	for (var i = 1; i < ht; i++) {
 		if (cst[i][lh]) {
 			rightColPass(i, lh);
 		}
 	}
-	// new code |\/|
-	function newStateFromScore() {
-		var newState = [];
-		for (var i = 0; i < score.length; i++) {
-			newState[i] = [];
-			for (var j = 0; j < score[i].length; j++) {
-				if (score[i][j] > 3 || score[i][j] < 2) {
-					newState[i][j] = 0;
-				} else if (score[i][j] == 3) {
-					newState[i][j] = 1;
-				} else if (score[i][j] == 2 && cst[i][j] == 1) {
-					newState[i][j] = 1;
-				} else {
-					newState[i][j] = 0;
-				}
+
+	for (var i = 0; i < score.length; i++) {
+		for (var j = 0; j < score[i].length; j++) {
+			if (score[i][j] > 3 || score[i][j] < 2) {
+				fts[i][j] = 0;
+			} else if (score[i][j] === 3) {
+				fts[i][j] += 1;
+			} else if (score[i][j] === 2 && cst[i][j] > 0) {
+				fts[i][j] += 1;
+			} else {
+				fts[i][j] = 0;
 			}
 		}
-		return newState;
+	}
+	if (params.randomBirth) {
+		var h = Math.floor(Math.random() * ht);
+		var l = Math.floor(Math.random() * lh);
+		if (!fts[h][l]) {
+			fts[h][l] = 1;
+		}
 	}
 
-	var fts = newStateFromScore();
-	// console.timeEnd('fts');
+	// console.log('---cst---');
+	// cst.map(x=> console.log(x));
+	// console.log('---score---');
+	// score.map(x=> console.log(x));
+	// console.log('---fts---');
+	// fts.map(x=> console.log(x))
 	return fts;
 }
 
-// \/\/\/ To be replace by React.js \/\/\/ --only for testing
-function generateDOM(nowState) {
-	nowState = JSON.parse(JSON.stringify(nowState));
-	document.getElementById('main').innerHTML = '';
-	for (var i = 0; i < nowState.length; i++) {
-		var div = document.createElement('DIV');
-		div.id = 'div-' + i;
-		div.className = 'row';
-		document.getElementById('main').appendChild(div);
-		for (var j = 0; j < nowState[i].length; j++) {
-			var divSm = document.createElement('DIV');
-			divSm.className = 'off';
-			if (nowState[i][j]) {
-				divSm.className = 'on';
-			}
-			document.getElementById('div-' + i).appendChild(divSm);
-		}
-	}
+// react //
+function Cell(props) {
+	return React.createElement('div', {
+		className: props.cellState ? 'on' : 'off',
+		onClick: function onClick() {
+			return props.onClick(props.row, props.col);
+		},
+		style: props.cellState ? { background: 'hsl(' + (190 + props.cellState * 5) + ', 67%, 68%)' } : {}
+	});
 }
 
-var xyz = generateGrid();
-generateDOM(xyz);
+function Row(props) {
+	var preRenderRow = props.rowState.map(function (x, i) {
+		return React.createElement(Cell, { key: i, col: i, row: props.row, cellState: x, onClick: props.onClick });
+	});
+	return React.createElement(
+		'div',
+		{ className: 'row' },
+		preRenderRow
+	);
+}
 
-document.getElementById("load").addEventListener("click", function () {
-	xyz = generateGrid();
-});
+var Main = function (_React$Component) {
+	_inherits(Main, _React$Component);
 
-var interv = setInterval(function () {
-	xyz = futureState(xyz);
-	generateDOM(xyz);
-}, 35);
+	function Main(props) {
+		_classCallCheck(this, Main);
+
+		var _this = _possibleConstructorReturn(this, (Main.__proto__ || Object.getPrototypeOf(Main)).call(this, props));
+
+		_this.state = {
+			gridState: _this.props.grid
+		};
+		_this.clickCell = _this.clickCell.bind(_this);
+		return _this;
+	}
+
+	_createClass(Main, [{
+		key: 'clickCell',
+		value: function clickCell(r, c) {
+			if (!this.state.gridState[r][c]) {
+				this.setState({});
+			}
+		}
+	}, {
+		key: 'componentDidMount',
+		value: function componentDidMount() {
+			var _this2 = this;
+
+			this.interv = setInterval(function () {
+				_this2.setState({ gridState: genNewGridState(_this2.state.gridState) });
+			}, params.interval);
+		}
+	}, {
+		key: 'render',
+		value: function render() {
+			var preRenderGrid = this.state.gridState.map(function (x, i) {
+				return React.createElement(Row, { key: i, row: i, rowState: x });
+			});
+			return React.createElement(
+				'section',
+				{ id: 'grid' },
+				preRenderGrid
+			);
+		}
+	}]);
+
+	return Main;
+}(React.Component);
+
+ReactDOM.render(React.createElement(Main, { grid: genNewGridState(mem.randGrid, mem.score) }), document.getElementById('main'));
+// react //
