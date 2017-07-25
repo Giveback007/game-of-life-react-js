@@ -37,7 +37,7 @@ var params = {
 	height: Math.ceil(window.screen.availHeight / 14),
 	length: Math.ceil(window.screen.availWidth / 14),
 	randomBirth: false,
-	spawnRate: 0.10
+	spawnRate: 0.20
 };
 
 var mem = {
@@ -47,7 +47,7 @@ var mem = {
 
 function prepGrid() {
 
-	while (params.height * params.length > 5625) {
+	while (params.height * params.length > 5000) {
 		params.cellSize += 1;
 		params.height = Math.ceil(window.screen.availHeight / (params.cellSize - 1));
 		params.length = Math.ceil(window.screen.availWidth / (params.cellSize - 1));
@@ -200,13 +200,14 @@ function genNewGridState(cst) {
 }
 
 // react //
+
 // </cell>
 function Cell(props) {
 	var color = {};
 	var className = 'off';
 	if (props.cellState > 0) {
 		className = 'on';
-		color = { background: 'hsl(' + (162 + props.cellState * 10) + ', 58%, 55%)' };
+		color = { background: 'hsl(' + (172 + props.cellState * 4.2) + ', 58%, 55%)' };
 	} else if (props.cellState < 0) {
 		color = {
 			background: 'hsl(162, 66%, ' + (66 + props.cellState * 0.45) + '%)', //////////////////////////////
@@ -271,18 +272,6 @@ var Grid = function (_React$Component) {
 			}
 			this.setState({ gridState: tempGrid });
 		}
-
-		// cellSize(size) {
-		// 	mem.cycles = 0;
-		// 	params.cellSize = size;
-		// 	params.height = Math.floor(window.screen.availHeight / size);
-		// 	params.length = Math.floor(window.screen.availWidth / size);
-		// 	styleSheet.deleteRule(0);
-		// 	styleSheet.insertRule(`.row div {width: ${size}px;height: ${size}px;}`, 0);
-		// 	prepGrid();
-		// 	this.setState({gridState: mem.randGrid});
-		// }
-
 	}, {
 		key: 'componentDidMount',
 		value: function componentDidMount() {
@@ -294,7 +283,9 @@ var Grid = function (_React$Component) {
 					cycles: _this2.state.cycles + 1
 				});
 				total += perf = Date.now() - perf;
-				// if(this.state.cycles % 100 === 0 || this.state.cycles < 31) {console.log(this.state.cycles, '-', total / this.state.cycles)}
+				if (_this2.state.cycles % 100 === 0 || _this2.state.cycles < 31) {
+					console.log(_this2.state.cycles, '-', total / _this2.state.cycles);
+				}
 				perf = Date.now();
 			}, this.state.delay);
 		}
@@ -322,5 +313,50 @@ var Grid = function (_React$Component) {
 	return Grid;
 }(React.Component);
 
-ReactDOM.render(React.createElement(Grid, { grid: genNewGridState(mem.randGrid, mem.score) }), document.getElementById('main'));
+var MenuBar = function (_React$Component2) {
+	_inherits(MenuBar, _React$Component2);
+
+	function MenuBar(props) {
+		_classCallCheck(this, MenuBar);
+
+		var _this4 = _possibleConstructorReturn(this, (MenuBar.__proto__ || Object.getPrototypeOf(MenuBar)).call(this, props));
+
+		_this4.state = {};
+		return _this4;
+	}
+
+	_createClass(MenuBar, [{
+		key: 'render',
+		value: function render() {
+			return null;
+		}
+	}]);
+
+	return MenuBar;
+}(React.Component);
+
+var Main = function (_React$Component3) {
+	_inherits(Main, _React$Component3);
+
+	function Main(props) {
+		_classCallCheck(this, Main);
+
+		var _this5 = _possibleConstructorReturn(this, (Main.__proto__ || Object.getPrototypeOf(Main)).call(this, props));
+
+		_this5.state = {};
+		return _this5;
+	}
+
+	_createClass(Main, [{
+		key: 'render',
+		value: function render() {
+			return React.createElement(Grid, { grid: genNewGridState(mem.randGrid, mem.score) });
+		}
+	}]);
+
+	return Main;
+}(React.Component);
+
+ReactDOM.render(React.createElement(Main, null), document.getElementById('main'));
+
 // react //

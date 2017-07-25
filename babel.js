@@ -24,7 +24,7 @@ var params = {
 	height: Math.ceil(window.screen.availHeight / 14),
 	length: Math.ceil(window.screen.availWidth / 14),
 	randomBirth: false,
-	spawnRate: 0.10
+	spawnRate: 0.20
 };
 
 var mem = {
@@ -35,7 +35,7 @@ var mem = {
 
 function prepGrid() {
 
-	while(params.height * params.length > 5625) {
+	while(params.height * params.length > 5000) {
 		params.cellSize += 1;
 		params.height = Math.ceil(window.screen.availHeight / (params.cellSize - 1));
 		params.length = Math.ceil(window.screen.availWidth / (params.cellSize - 1));
@@ -154,13 +154,14 @@ function genNewGridState(cst) {
 
 
 // react //
+
 // </cell>
 function Cell(props) {
 	var color = {};
 	var className = 'off';
 		if (props.cellState > 0) {
 			className = 'on';
-			color = {background:'hsl('+(162+(props.cellState*10))+', 58%, 55%)'};
+			color = {background:'hsl('+(172+(props.cellState*4.2))+', 58%, 55%)'};
 		}
 		else if (props.cellState < 0) {
 			color = {
@@ -206,17 +207,6 @@ class Grid extends React.Component {
 		this.setState({gridState: tempGrid});
 	}
 
-	// cellSize(size) {
-	// 	mem.cycles = 0;
-	// 	params.cellSize = size;
-	// 	params.height = Math.floor(window.screen.availHeight / size);
-	// 	params.length = Math.floor(window.screen.availWidth / size);
-	// 	styleSheet.deleteRule(0);
-	// 	styleSheet.insertRule(`.row div {width: ${size}px;height: ${size}px;}`, 0);
-	// 	prepGrid();
-	// 	this.setState({gridState: mem.randGrid});
-	// }
-
 	componentDidMount() {
 		this.interv = setInterval(() => {
 			this.setState({
@@ -224,7 +214,7 @@ class Grid extends React.Component {
 				cycles: this.state.cycles + 1
 			});
 			total += perf = Date.now() - perf;
-			// if(this.state.cycles % 100 === 0 || this.state.cycles < 31) {console.log(this.state.cycles, '-', total / this.state.cycles)}
+			if(this.state.cycles % 100 === 0 || this.state.cycles < 31) {console.log(this.state.cycles, '-', total / this.state.cycles)}
 			perf = Date.now();
 
 		}, this.state.delay);
@@ -246,5 +236,31 @@ class Grid extends React.Component {
 	}
 }
 
-ReactDOM.render(<Grid grid={genNewGridState(mem.randGrid, mem.score)}/>, document.getElementById('main'));
+class MenuBar extends React.Component {
+	constructor(props) {
+		super(props);
+		this.state = {
+
+		}
+	}
+	render(){
+		return(null);
+	}
+}
+
+class Main extends React.Component {
+	constructor(props) {
+		super(props);
+		this.state = {
+
+		}
+	}
+
+		render() {
+			return <Grid grid={genNewGridState(mem.randGrid, mem.score)}/>
+		}
+	}
+
+ReactDOM.render(<Main />, document.getElementById('main'));
+
 // react //
