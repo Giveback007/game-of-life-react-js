@@ -8,12 +8,27 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
+document.getElementById('navOnOff').addEventListener('click', toggleNav);
+
 var styleSheet;
 (function () {
 	var styleEl = document.createElement('style');
 	document.head.appendChild(styleEl);
 	styleSheet = styleEl.sheet;
 })();
+
+var navIsOn = false;
+function toggleNav() {
+	var btn = document.getElementById('navOnOff');
+	var nav = document.getElementById('nav');
+	navIsOn = !navIsOn;
+	if (navIsOn) {
+		btn.classList.add('navOn');nav.classList.add('navOn');
+	}
+	if (!navIsOn) {
+		btn.classList.remove('navOn');nav.classList.remove('navOn');
+	}
+}
 
 var params = {
 	cellSize: 15,
@@ -22,7 +37,7 @@ var params = {
 	height: Math.ceil(window.screen.availHeight / 14),
 	length: Math.ceil(window.screen.availWidth / 14),
 	randomBirth: false,
-	spawnRate: 0.25
+	spawnRate: 0.10
 };
 
 var mem = {
@@ -31,6 +46,7 @@ var mem = {
 };
 
 function prepGrid() {
+
 	while (params.height * params.length > 5625) {
 		params.cellSize += 1;
 		params.height = Math.ceil(window.screen.availHeight / (params.cellSize - 1));
@@ -153,7 +169,7 @@ function genNewGridState(cst) {
 		for (var j = 0; j < score[i].length; j++) {
 			if (cst[i][j] == 0 && score[i][j] == 0) {} //{fts[i][j] = 0} // stay empty
 			else if (cst[i][j] >= 1 && (score[i][j] > 3 || score[i][j] < 2)) {
-					fts[i][j] = -7;
+					fts[i][j] = -35;
 				} // die
 				else if (cst[i][j] <= 0 && score[i][j] == 3) {
 						fts[i][j] = 1;
@@ -193,7 +209,7 @@ function Cell(props) {
 		color = { background: 'hsl(' + (162 + props.cellState * 10) + ', 58%, 55%)' };
 	} else if (props.cellState < 0) {
 		color = {
-			background: 'hsl(162, 66%, ' + (66 + props.cellState * 0.83) + '%)',
+			background: 'hsl(162, 66%, ' + (66 + props.cellState * 0.45) + '%)', //////////////////////////////
 			borderRadius: '25%'
 		};
 	}

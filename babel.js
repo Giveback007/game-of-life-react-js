@@ -1,3 +1,5 @@
+document.getElementById('navOnOff').addEventListener('click', toggleNav);
+
 var styleSheet;
 (function(){
 	var styleEl = document.createElement('style');
@@ -5,7 +7,14 @@ var styleSheet;
 	styleSheet = styleEl.sheet;
 })()
 
-
+var navIsOn = false;
+function toggleNav() {
+	var btn = document.getElementById('navOnOff');
+	var nav = document.getElementById('nav');
+	navIsOn = !navIsOn;
+	if (navIsOn) { btn.classList.add('navOn'); nav.classList.add('navOn'); }
+	if (!navIsOn) { btn.classList.remove('navOn'); nav.classList.remove('navOn'); }
+}
 
 
 var params = {
@@ -15,7 +24,7 @@ var params = {
 	height: Math.ceil(window.screen.availHeight / 14),
 	length: Math.ceil(window.screen.availWidth / 14),
 	randomBirth: false,
-	spawnRate: 0.25
+	spawnRate: 0.10
 };
 
 var mem = {
@@ -25,6 +34,7 @@ var mem = {
 
 
 function prepGrid() {
+
 	while(params.height * params.length > 5625) {
 		params.cellSize += 1;
 		params.height = Math.ceil(window.screen.availHeight / (params.cellSize - 1));
@@ -121,7 +131,7 @@ function genNewGridState(cst) {
 		for (var i = 0; i < score.length; i++) {
 			for (var j = 0; j < score[i].length; j++) {
 				if (cst[i][j] == 0 && score[i][j] == 0) {}//{fts[i][j] = 0} // stay empty
-				else if (cst[i][j] >= 1 && (score[i][j] > 3 || score[i][j] < 2)) {fts[i][j] = -7} // die
+				else if (cst[i][j] >= 1 && (score[i][j] > 3 || score[i][j] < 2)) {fts[i][j] = -35} // die
 				else if (cst[i][j] <= 0 && score[i][j] == 3) {fts[i][j] = 1} // born
 				else if (cst[i][j] >= 1 && (score[i][j] == 2 || score[i][j] == 3)) {fts[i][j] += 1} // stay alive
 				else if (cst[i][j] < 0) {fts[i][j] += 1} // was dead ------ must stay last
@@ -154,7 +164,7 @@ function Cell(props) {
 		}
 		else if (props.cellState < 0) {
 			color = {
-				background: 'hsl(162, 66%, '+(66+props.cellState*0.83)+'%)',
+				background: 'hsl(162, 66%, '+(66+props.cellState*0.45)+'%)', //////////////////////////////
 				borderRadius: '25%'
 			}
 		}

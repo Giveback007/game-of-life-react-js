@@ -8,22 +8,52 @@ nav
   position: fixed
   background: white
   z-index: 99
+  width: 0
+  transition: width 0.5s
   top: 0
   left: 0
   height: 100%
-  width: 250px
+  background: #3474BC
+  &.navOn
+    width: 250px
+    box-shadow: 3px 6px 5px 3px rgba(0,0,0,0.35)
+    transition: width 0.5s
+
+#navOnOff
+  position: fixed
+  font-size: 45px
+  padding: 15px
+  z-index: 100
+  width: 100px
+  height: 100px
+  border: outset 2px
+  top: 35px
+  left: 35px
+  background: none
+  &.navOn
+  &:active
+    border: inset
+
+@media screen and (max-width: 450px)
+  #navOnOff
+    width: 70px
+    height: 70px
+    font-size: 25px
+    padding: 5px
+
 
 #main
   position: fixed
   left: 50%
   top: 50%
   transform: translate(-50%, -50%)
+  border: inset
 
 #grid
-  background: hsl(162, 66%, 66%)
+  background: #6ee3c0
+  //hsl(162, 66%, 66%)
 
 .row
-  // display: inline-block
   display: flex
 
 .off
@@ -31,8 +61,9 @@ nav
 .on
   border: outset #f2f2f2 1px
 
-.row div
-
+// .row div
+//   width: 19px
+//   height: 19px
 
 .row div:active
   border: inset 4px
