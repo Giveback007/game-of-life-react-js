@@ -6,9 +6,16 @@ body {
   margin: 0;
   background-color: #125DB0; }
 
-nav {
+button {
+  border: outset 2px lightgrey;
+  background: lightgrey;
+  border-radius: 4px; }
+  button:active {
+    border: solid lightgrey; }
+
+.nav {
+  padding-top: 150px;
   position: fixed;
-  background: white;
   z-index: 99;
   width: 0;
   -webkit-transition: width 0.5s;
@@ -18,36 +25,111 @@ nav {
   left: 0;
   height: 100%;
   background: #3474BC; }
-  nav.navOn {
-    width: 250px;
+  .nav button, .nav input, .nav h3, .nav h2 {
+    display: none; }
+  .nav.navOn {
+    width: 220px;
     -webkit-box-shadow: 3px 6px 5px 3px rgba(0, 0, 0, 0.35);
     box-shadow: 3px 6px 5px 3px rgba(0, 0, 0, 0.35);
-    -webkit-transition: width 0.5s;
-    -o-transition: width 0.5s;
-    transition: width 0.5s; }
+    -webkit-transition: width 1s;
+    -o-transition: width 1s;
+    transition: width 1s; }
+    .nav.navOn button, .nav.navOn input, .nav.navOn h3, .nav.navOn h2 {
+      display: block; }
+    .nav.navOn input {
+      margin: auto;
+      width: 100px; }
+    .nav.navOn h2, .nav.navOn h3 {
+      text-align: center;
+      margin: 0; }
+  .nav .nav__top-btns {
+    margin: 0 0 20px 0;
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-flex-wrap: wrap;
+    -ms-flex-wrap: wrap;
+    flex-wrap: wrap; }
+    .nav .nav__top-btns button {
+      width: 31%;
+      height: 50px;
+      margin: 0 auto;
+      margin-top: 15px; }
+  .nav .nav__bottom-btns {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-orient: vertical;
+    -webkit-box-direction: normal;
+    -webkit-flex-direction: column;
+    -ms-flex-direction: column;
+    flex-direction: column; }
+    .nav .nav__bottom-btns button {
+      height: 40px;
+      margin: 3px 0; }
+  .nav .nav__speed, .nav .nav__spawn-rate {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
+    margin: 5px 0 15px 0;
+    -webkit-box-pack: justify;
+    -webkit-justify-content: space-between;
+    -ms-flex-pack: justify;
+    justify-content: space-between; }
+    .nav .nav__speed h2, .nav .nav__spawn-rate h2 {
+      margin: auto; }
+    .nav .nav__speed button, .nav .nav__spawn-rate button {
+      width: 35px;
+      height: 40px;
+      margin: 0 3px;
+      font-size: 20px;
+      padding: 1px; }
 
 #navOnOff {
   position: fixed;
-  font-size: 45px;
-  padding: 15px;
+  font-size: 60px;
+  padding: 5px;
   z-index: 100;
   width: 100px;
   height: 100px;
-  border: outset 2px;
+  border: outset 3px lightgrey;
   top: 35px;
-  left: 35px;
-  background: none; }
+  left: 60px;
+  background: rgba(211, 211, 211, 0.5);
+  border-radius: 15%; }
+  #navOnOff.navOn {
+    background: lightgrey;
+    -webkit-transition: background-color 1s;
+    -o-transition: background-color 1s;
+    transition: background-color 1s; }
   #navOnOff:active {
-    border: inset; }
+    border: inset 3px lightgrey; }
 
 @media screen and (max-width: 450px) {
+  .nav {
+    padding-top: 80px; }
+    .nav.navOn {
+      width: 200px; }
   #navOnOff {
-    width: 70px;
-    height: 70px;
+    width: 50px;
+    height: 50px;
+    top: 15px;
+    left: 15px;
     font-size: 25px;
-    padding: 5px; } }
+    padding: 5px; }
+    #navOnOff.navOn {
+      top: 20px;
+      left: 75px;
+      -webkit-transition: top 1s, left 2s;
+      -o-transition: top 1s, left 2s;
+      transition: top 1s, left 2s; }
+  #cycles {
+    left: 0; } }
 
-#main {
+#grid-container {
   position: fixed;
   left: 50%;
   top: 50%;
@@ -59,11 +141,30 @@ nav {
   background: #6ee3c0;
   border: inset #0A4586; }
 
+#cycles {
+  position: fixed;
+  margin: 25px 0;
+  top: 0;
+  left: 50%;
+  z-index: 98; }
+  #cycles h3 {
+    margin: 5px 0 0 0;
+    text-align: center;
+    font-size: 25px; }
+
 .row {
   display: -webkit-box;
   display: -webkit-flex;
   display: -ms-flexbox;
   display: flex; }
+
+.on {
+  border: outset 1px #f2f2f2; }
+
+.row div {
+  -webkit-transition: width 1.8s, height 1.8s;
+  -o-transition: width 1.8s, height 1.8s;
+  transition: width 1.8s, height 1.8s; }
 
 .row div:active {
   border: inset 4px;

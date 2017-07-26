@@ -1,5 +1,3 @@
-document.getElementById('navOnOff').addEventListener('click', toggleNav);
-
 var styleSheet;
 (function(){
 	var styleEl = document.createElement('style');
@@ -12,51 +10,80 @@ function toggleNav() {
 	var btn = document.getElementById('navOnOff');
 	var nav = document.getElementById('nav');
 	navIsOn = !navIsOn;
-	if (navIsOn) { btn.classList.add('navOn'); nav.classList.add('navOn'); }
-	if (!navIsOn) { btn.classList.remove('navOn'); nav.classList.remove('navOn'); }
+	if (navIsOn) {
+		btn.classList.add('navOn'); nav.classList.add('navOn');
+		styleSheet.deleteRule(0);
+		styleSheet.insertRule(`.row div {width: ${Math.floor(initParams.cellSize*0.88)}px; height: ${Math.floor(initParams.cellSize*0.88)}px;}`, 0);
+	}
+	if (!navIsOn) {
+		btn.classList.remove('navOn'); nav.classList.remove('navOn');
+		styleSheet.deleteRule(0);
+		styleSheet.insertRule(`.row div {width: ${initParams.cellSize}px; height: ${initParams.cellSize}px;}`, 0);
+	}
 }
 
+function detectMob() {
+ if( navigator.userAgent.match(/Android/i)
+ || navigator.userAgent.match(/webOS/i)
+ || navigator.userAgent.match(/iPhone/i)
+ || navigator.userAgent.match(/iPad/i)
+ || navigator.userAgent.match(/iPod/i)
+ || navigator.userAgent.match(/BlackBerry/i)
+ || navigator.userAgent.match(/Windows Phone/i)
+ || navigator.userAgent.toLowerCase().indexOf('firefox') > -1
+ ){ return true; } else { return false; }
+}
 
-var params = {
-	cellSize: 15,
-	// height: 50,
-	// length: 50,
-	height: Math.ceil(window.screen.availHeight / 14),
-	length: Math.ceil(window.screen.availWidth / 14),
-	randomBirth: false,
-	spawnRate: 0.20
+function clone(x) {
+	return Object.assign({}, x);
+}
+
+var initParams = { // change name to initParams
+	cellSize: 20,
+	height: Math.ceil(window.screen.availHeight / 20),
+	length: Math.ceil(window.screen.availWidth / 20),
+	randomBirth: true,
+	isPoused: false,
+	cellBorders: true,
+	seasons: true,
+	spawnRate: 0.20,
+	delay: 50
 };
 
-var mem = {
+var mem = { // -> <Grid /> this.state
 	randGrid: [],
 	score: [],
+	cycles: 0 // temporary
 };
 
-
-function prepGrid() {
-
-	while(params.height * params.length > 5000) {
-		params.cellSize += 1;
-		params.height = Math.ceil(window.screen.availHeight / (params.cellSize - 1));
-		params.length = Math.ceil(window.screen.availWidth / (params.cellSize - 1));
-	}
-
-	styleSheet.insertRule(`.row div {width: ${params.cellSize}px; height: ${params.cellSize}px;}`, 0);
-	for (var i = 0; i < params.height; i++) {
+function randomizeGrid() {
+	for (var i = 0; i < initParams.height; i++) {
 		mem.randGrid[i] = [];
 		mem.score[i] = [];
-		for (var j = 0; j < params.length; j++) {
-			var random = Math.random() < params.spawnRate;
+		for (var j = 0; j < initParams.length; j++) {
+			var random = Math.random() < initParams.spawnRate;
 			var num = random ? 1 : 0;
 			mem.randGrid[i][j] = num;
+			mem.score[i][j] = 0;
 		}
 	}
-};
+}
 
+function prepGrid() {
+	var cellNum = 4000;
+	if (detectMob()) {cellNum = 1500}
+	while(initParams.height * initParams.length > cellNum) {
+		initParams.cellSize += 1;
+		initParams.height = Math.ceil(window.screen.availHeight / (initParams.cellSize));
+		initParams.length = Math.ceil(window.screen.availWidth / (initParams.cellSize));
+	}
+	styleSheet.insertRule(`.row div {width: ${initParams.cellSize}px; height: ${initParams.cellSize}px;}`, 0);
+	randomizeGrid();
+};
 prepGrid();
 
-// </main>
-function genNewGridState(cst) {
+// </main func>
+function genNextGridState(cst) {
 	var fts = [];
 	var score = mem.score;
 	for(var i = 0; i < cst.length; i++) {
@@ -105,7 +132,7 @@ function genNewGridState(cst) {
 			score[rowBot][colR] += 1;
 	}
 
-	score[0][0] = 1; score[0][lh] = 1; score[ht][0] = 1; score[ht][lh] = 1;
+	// score[0][0] = 1; score[0][lh] = 1; score[ht][0] = 1; score[ht][lh] = 1;
 	if (cst[0][0])
 	{score[ht][0] += 1; score[ht][1] += 1; score[0][lh] += 1; score[0][1] += 1; score[1][lh] += 1; score[1][0] += 1; score[1][1] += 1}
 	if (cst[0][lh])
@@ -137,21 +164,14 @@ function genNewGridState(cst) {
 				else if (cst[i][j] < 0) {fts[i][j] += 1} // was dead ------ must stay last
 			}
 		}
-		if (params.randomBirth) {
+
+		if (initParams.randomBirth && mem.cycles % 15 == 0) {
 			var h = Math.floor(Math.random() * ht);
 			var l = Math.floor(Math.random() * lh);
-			if (!fts[h][l]){fts[h][l] = 1}
+			if (fts[h][l] < 1){fts[h][l] = 1}
 		}
-
-	// console.log('---cst---');
-	// cst.map(x=> console.log(x));
-	// console.log('---score---');
-	// score.map(x=> console.log(x));
-	// console.log('---fts---');
-	// fts.map(x=> console.log(x))
 	return fts;
 }
-
 
 // react //
 
@@ -161,7 +181,7 @@ function Cell(props) {
 	var className = 'off';
 		if (props.cellState > 0) {
 			className = 'on';
-			color = {background:'hsl('+(172+(props.cellState*4.2))+', 58%, 55%)'};
+			color = {background:'hsl('+((172+props.cycle*1.3)+(props.cellState*4.2))+', 58%, 55%)'};
 		}
 		else if (props.cellState < 0) {
 			color = {
@@ -179,45 +199,76 @@ function Cell(props) {
 
 // </row>
 function Row(props) {
-		var preRenderRow = props.rowState.map((x, i) => <Cell key={i} col={i} row={props.row} cellState={x} onClick={props.onClick}/>);
+		var preRenderRow = props.rowState.map((x, i) =>
+			<Cell
+				key={i}
+				col={i}
+				cycle={props.cycle}
+				row={props.row}
+				cellState={x}
+				onClick={props.onClick}
+			/>
+		);
 		return <div className='row'>{preRenderRow}</div>;
-	}
+}
 
-var perf = Date.now();	// perf
-var total = 0;					// perf
 // </grid>
-class Grid extends React.Component {
+class Main extends React.Component {
 	constructor(props) {
 		super(props);
 		this.state = {
-			gridState: this.props.grid,
+			gridState: mem.randGrid,
+			params: initParams,
 			cycles: 0,
-			delay: 75
 		}
-		this.clickCell = this.clickCell.bind(this);
-		// this.cellSize = this.cellSize.bind(this);
+		this.clickCell = this.clickCell.bind(this)
+		this.paramsUpdate = this.paramsUpdate.bind(this);
+		this.nextCycle = this.nextCycle.bind(this);
+		this.clearGrid = this.clearGrid.bind(this);
+		this.randomize = this.randomize.bind(this);
 	}
 
 	clickCell(r, c) {
-		// this.state.gridState.map( x => console.log(x) );
 		var tempGrid = [];
 		this.state.gridState.map( (x, i) => tempGrid.push(x) );
-		if(!tempGrid[r][c]) {tempGrid[r][c] = 1}
+		if(tempGrid[r][c] < 1) {tempGrid[r][c] = 1}
 		else {tempGrid[r][c] = 0}
 		this.setState({gridState: tempGrid});
 	}
 
-	componentDidMount() {
-		this.interv = setInterval(() => {
+	clearGrid() {
+		var tempParams = clone(this.state.params);
+		tempParams.isPoused = true;
+		var tempGrid = []
+		for (var i = 0; i < tempParams.height; i++) {
+			tempGrid[i] = [];
+			for (var j = 0; j < tempParams.length; j++) {
+				tempGrid[i][j] = [0];			}		}
+		this.setState({gridState: tempGrid, params: tempParams, cycles: 0});
+	}
+
+	randomize() {
+		randomizeGrid();
+		this.setState({gridState: mem.randGrid, cycles: 0})
+	}
+
+	paramsUpdate(p) {
+		this.setState({params: p})
+	}
+
+	nextCycle() {
+		if (!this.state.params.isPoused) {
+			mem.cycles += 1;
 			this.setState({
-				gridState: genNewGridState(this.state.gridState),
+				gridState: genNextGridState(this.state.gridState),
 				cycles: this.state.cycles + 1
 			});
-			total += perf = Date.now() - perf;
-			if(this.state.cycles % 100 === 0 || this.state.cycles < 31) {console.log(this.state.cycles, '-', total / this.state.cycles)}
-			perf = Date.now();
+		}
+		setTimeout(this.nextCycle, this.state.params.delay)
+	}
 
-		}, this.state.delay);
+	componentDidMount() {
+		this.nextCycle();
 	}
 
 	render() {
@@ -227,40 +278,105 @@ class Grid extends React.Component {
 					key={i}
 					row={i}
 					rowState={x}
+					cycle={this.state.params.seasons ? this.state.cycles : 0}
 					onClick={this.clickCell}
 				/>
 		);
 		return(
-			<section id='grid'>{preRenderGrid}</section>
+			<section>
+				<div id='cycles'>
+					<h3>Generations</h3>
+					<h3>{this.state.cycles}</h3>
+				</div>
+				<Menu
+					update={this.paramsUpdate}
+					clearGrid={this.clearGrid}
+					params={this.state.params}
+					randomize={this.randomize}
+				/>
+				<section id='grid-container'>
+					<div id='grid'>{preRenderGrid}</div>
+				</section>
+			</section>
 		);
 	}
 }
 
-class MenuBar extends React.Component {
-	constructor(props) {
-		super(props);
-		this.state = {
+// </menu>
+function Menu (props){
 
+	function spawnRate(isMore) {
+		var temp = clone(props.params);
+		if ((temp.spawnRate > 0 || isMore) && (temp.spawnRate < 1 || !isMore)) {
+			isMore ? temp.spawnRate += 0.05 : temp.spawnRate -= 0.05
+			if (temp.spawnRate < 0) {temp.spawnRate = 0};
+			initParams.spawnRate = temp.spawnRate; // temporary
 		}
+		props.update(temp);
 	}
-	render(){
-		return(null);
+
+	function changeSpeed(isFaster) {
+		var temp = clone(props.params);
+		if (temp.delay > 0 || !isFaster)	{
+			var change = temp.delay >= 200 ? 200 : 50;
+			if (temp.delay === 200 && isFaster) {change = 50}
+			isFaster ? temp.delay -= change : temp.delay += change
+		}
+		props.update(temp);
 	}
+
+	function toggleBorders() {
+		if (props.params.cellBorders) {
+			styleSheet.insertRule(`.on {border: none}`, 1);
+		} else {
+		styleSheet.deleteRule(1);
+		}
+		toggleParam('cellBorders');
+	}
+
+	function toggleParam(x) {
+		var temp = clone(props.params);
+		temp[x] = !temp[x];
+		props.update(temp);
+	}
+
+		return(
+			<nav id='nav' className='nav'>
+
+				<div className='nav__top-btns'>
+					<button onClick={props.clearGrid}><i className="fa fa-stop" aria-hidden="true"></i></button>
+					<button onClick={() => toggleParam('isPoused')}>
+						{props.params.isPoused ?
+							<i className="fa fa-play" aria-hidden="true"></i>:
+							<i className="fa fa-pause" aria-hidden="true"></i>}
+					</button>
+					<button onClick={props.randomize}><i className="fa fa-random" aria-hidden="true"></i></button>
+				</div>
+				<h3>Randomize Rate</h3>
+				<span className='nav__spawn-rate'>
+					<button onClick={() => spawnRate(false)}>-</button>
+						<h2>{(Math.round(props.params.spawnRate*100)/10).toFixed(1) + ' in 10'}</h2>
+					<button onClick={() => spawnRate(true)}>+</button>
+				</span>
+				<h3>Speed Delay</h3>
+				<span className='nav__speed'>
+					<button onClick={() => changeSpeed(true)}>-</button>
+						<h2>{props.params.delay < 1000 ? props.params.delay + 'ms' : (props.params.delay/1000).toFixed(2) + 's'}</h2>
+					<button onClick={() => changeSpeed(false)}>+</button>
+				</span>
+
+				<div className='nav__bottom-btns'>
+					<button onClick={toggleBorders}>{props.params.cellBorders ? 'Cell Borders On' : 'Cell Borders Off'}</button>
+					<button onClick={() => toggleParam('seasons')}>{props.params.seasons ? 'Seasons On' : 'Seasons Off'}</button>
+					<button onClick={() => toggleParam('randomBirth')}>{props.params.randomBirth ? 'Spontaneous Spawns On' : 'Spontaneous Spawns Off'}</button>
+				</div>
+
+			</nav>
+		);
 }
 
-class Main extends React.Component {
-	constructor(props) {
-		super(props);
-		this.state = {
 
-		}
-	}
-
-		render() {
-			return <Grid grid={genNewGridState(mem.randGrid, mem.score)}/>
-		}
-	}
-
-ReactDOM.render(<Main />, document.getElementById('main'));
-
+ReactDOM.render(<Main/>, document.getElementById('main'));
 // react //
+
+document.getElementById('navOnOff').addEventListener('click', toggleNav);
