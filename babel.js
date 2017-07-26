@@ -1,3 +1,4 @@
+// prep code //
 var styleSheet;
 (function(){
 	var styleEl = document.createElement('style');
@@ -38,7 +39,7 @@ function clone(x) {
 	return Object.assign({}, x);
 }
 
-var initParams = { // change name to initParams
+var initParams = {
 	cellSize: 20,
 	height: Math.ceil(window.screen.availHeight / 20),
 	length: Math.ceil(window.screen.availWidth / 20),
@@ -50,25 +51,6 @@ var initParams = { // change name to initParams
 	delay: 50
 };
 
-var mem = { // -> <Grid /> this.state
-	randGrid: [],
-	score: [],
-	cycles: 0 // temporary
-};
-
-function randomizeGrid() {
-	for (var i = 0; i < initParams.height; i++) {
-		mem.randGrid[i] = [];
-		mem.score[i] = [];
-		for (var j = 0; j < initParams.length; j++) {
-			var random = Math.random() < initParams.spawnRate;
-			var num = random ? 1 : 0;
-			mem.randGrid[i][j] = num;
-			mem.score[i][j] = 0;
-		}
-	}
-}
-
 function prepGrid() {
 	var cellNum = 4000;
 	if (detectMob()) {cellNum = 1500}
@@ -78,103 +60,26 @@ function prepGrid() {
 		initParams.length = Math.ceil(window.screen.availWidth / (initParams.cellSize));
 	}
 	styleSheet.insertRule(`.row div {width: ${initParams.cellSize}px; height: ${initParams.cellSize}px;}`, 0);
-	randomizeGrid();
 };
 prepGrid();
 
-// </main func>
-function genNextGridState(cst) {
-	var fts = [];
-	var score = mem.score;
-	for(var i = 0; i < cst.length; i++) {
-		fts[i] = cst[i].slice();
-	for(var j = 0; j < cst[i].length; j++) {
-    mem.score[i][j] = 0; }}
-
-		var ht = cst.length - 1;
-		var lh = cst[0].length - 1;
-
-	function passScore(row, col) {
-		var rowTop = row-1, rowBot = row+1, colL = col-1, colR = col+1;
-		if (row == 0) {rowTop = ht}
-		else if (row == ht) {rowBot = 0}
-			score[rowTop][colL] += 1;
-			score[rowTop][col] += 1;
-			score[rowTop][colR] += 1;
-			score[row][colL] += 1;
-			score[row][colR] += 1;
-			score[rowBot][colL] += 1;
-			score[rowBot][col] += 1;
-			score[rowBot][colR] += 1;
-	}
-
-	function leftColPass(row, col) {
-		var rowTop = row-1, rowBot = row+1, colL = lh, colR = col+1;
-			score[rowTop][colL] += 1;
-			score[rowTop][col] += 1;
-			score[rowTop][colR] += 1;
-			score[row][colL] += 1;
-			score[row][colR] += 1;
-			score[rowBot][colL] += 1;
-			score[rowBot][col] += 1;
-			score[rowBot][colR] += 1;
-	}
-
-	function rightColPass(row, col) {
-		var rowTop = row-1, rowBot = row+1, colL = col-1, colR = 0;
-			score[rowTop][colL] += 1;
-			score[rowTop][col] += 1;
-			score[rowTop][colR] += 1;
-			score[row][colL] += 1;
-			score[row][colR] += 1;
-			score[rowBot][colL] += 1;
-			score[rowBot][col] += 1;
-			score[rowBot][colR] += 1;
-	}
-
-	// score[0][0] = 1; score[0][lh] = 1; score[ht][0] = 1; score[ht][lh] = 1;
-	if (cst[0][0])
-	{score[ht][0] += 1; score[ht][1] += 1; score[0][lh] += 1; score[0][1] += 1; score[1][lh] += 1; score[1][0] += 1; score[1][1] += 1}
-	if (cst[0][lh])
-	{score[ht][lh-1] += 1; score[ht][lh] += 1; score[0][lh-1] += 1; score[0][0] += 1; score[1][lh-1] += 1; score[1][lh] += 1; score[1][0] += 1}
-	if (cst[ht][0])
-	{score[ht-1][lh] += 1; score[ht-1][0] += 1; score[ht-1][1] += 1; score[ht][lh] += 1; score[ht][1] += 1; score[0][0] += 1; score[0][1] += 1}
-	if (cst[ht][lh])
-	{score[ht-1][lh-1] += 1; score[ht-1][lh] += 1; score[ht-1][0] += 1; score[ht][lh-1] += 1; score[ht][0] += 1; score[0][lh-1] += 1; score[0][lh] += 1}
-
-	for (var i = 0; i <= ht; i++) {
-		for (var j = 1; j < lh; j++) {
-			if (cst[i][j] > 0) {passScore(i, j)}
-		}}
-
-	for (var i = 1; i < ht; i++) {
-		if (cst[i][0] > 0) {leftColPass(i, 0)}
-	}
-
-	for (var i = 1; i < ht; i++) {
-		if (cst[i][lh] > 0) {rightColPass(i, lh)}
-	}
-
-		for (var i = 0; i < score.length; i++) {
-			for (var j = 0; j < score[i].length; j++) {
-				if (cst[i][j] == 0 && score[i][j] == 0) {}//{fts[i][j] = 0} // stay empty
-				else if (cst[i][j] >= 1 && (score[i][j] > 3 || score[i][j] < 2)) {fts[i][j] = -35} // die
-				else if (cst[i][j] <= 0 && score[i][j] == 3) {fts[i][j] = 1} // born
-				else if (cst[i][j] >= 1 && (score[i][j] == 2 || score[i][j] == 3)) {fts[i][j] += 1} // stay alive
-				else if (cst[i][j] < 0) {fts[i][j] += 1} // was dead ------ must stay last
-			}
+function randomizeGrid(ht, lh, spwnRt) {
+	var randGrid = [];
+	for (var i = 0; i < ht; i++) {
+		randGrid[i] = [];
+		for (var j = 0; j < lh; j++) {
+			var random = Math.random() < spwnRt;
+			var num = random ? 1 : 0;
+			randGrid[i][j] = num;
 		}
-
-		if (initParams.randomBirth && mem.cycles % 15 == 0) {
-			var h = Math.floor(Math.random() * ht);
-			var l = Math.floor(Math.random() * lh);
-			if (fts[h][l] < 1){fts[h][l] = 1}
-		}
-	return fts;
+	}
+	return randGrid;
 }
+// prep code //
+
+
 
 // react //
-
 // </cell>
 function Cell(props) {
 	var color = {};
@@ -217,8 +122,8 @@ class Main extends React.Component {
 	constructor(props) {
 		super(props);
 		this.state = {
-			gridState: mem.randGrid,
 			params: initParams,
+			gridState: randomizeGrid(initParams.height, initParams.length, initParams.spawnRate),
 			cycles: 0,
 		}
 		this.clickCell = this.clickCell.bind(this)
@@ -226,6 +131,99 @@ class Main extends React.Component {
 		this.nextCycle = this.nextCycle.bind(this);
 		this.clearGrid = this.clearGrid.bind(this);
 		this.randomize = this.randomize.bind(this);
+		this.genNextGridState = this.genNextGridState.bind(this);
+	}
+
+	// </main func>
+	genNextGridState(cst) {
+		var fts = [];
+		var score = [];
+		for(var i = 0; i < cst.length; i++) {
+			fts[i] = cst[i].slice();
+			score[i] = [];
+		for(var j = 0; j < cst[i].length; j++) {
+	    score[i][j] = 0; }}
+
+			var ht = cst.length - 1;
+			var lh = cst[0].length - 1;
+
+		function passScore(row, col) {
+			var rowTop = row-1, rowBot = row+1, colL = col-1, colR = col+1;
+			if (row == 0) {rowTop = ht}
+			else if (row == ht) {rowBot = 0}
+				score[rowTop][colL] += 1;
+				score[rowTop][col] += 1;
+				score[rowTop][colR] += 1;
+				score[row][colL] += 1;
+				score[row][colR] += 1;
+				score[rowBot][colL] += 1;
+				score[rowBot][col] += 1;
+				score[rowBot][colR] += 1;
+		}
+
+		function leftColPass(row, col) {
+			var rowTop = row-1, rowBot = row+1, colL = lh, colR = col+1;
+				score[rowTop][colL] += 1;
+				score[rowTop][col] += 1;
+				score[rowTop][colR] += 1;
+				score[row][colL] += 1;
+				score[row][colR] += 1;
+				score[rowBot][colL] += 1;
+				score[rowBot][col] += 1;
+				score[rowBot][colR] += 1;
+		}
+
+		function rightColPass(row, col) {
+			var rowTop = row-1, rowBot = row+1, colL = col-1, colR = 0;
+				score[rowTop][colL] += 1;
+				score[rowTop][col] += 1;
+				score[rowTop][colR] += 1;
+				score[row][colL] += 1;
+				score[row][colR] += 1;
+				score[rowBot][colL] += 1;
+				score[rowBot][col] += 1;
+				score[rowBot][colR] += 1;
+		}
+
+		// score[0][0] = 1; score[0][lh] = 1; score[ht][0] = 1; score[ht][lh] = 1;
+		if (cst[0][0])
+		{score[ht][0] += 1; score[ht][1] += 1; score[0][lh] += 1; score[0][1] += 1; score[1][lh] += 1; score[1][0] += 1; score[1][1] += 1}
+		if (cst[0][lh])
+		{score[ht][lh-1] += 1; score[ht][lh] += 1; score[0][lh-1] += 1; score[0][0] += 1; score[1][lh-1] += 1; score[1][lh] += 1; score[1][0] += 1}
+		if (cst[ht][0])
+		{score[ht-1][lh] += 1; score[ht-1][0] += 1; score[ht-1][1] += 1; score[ht][lh] += 1; score[ht][1] += 1; score[0][0] += 1; score[0][1] += 1}
+		if (cst[ht][lh])
+		{score[ht-1][lh-1] += 1; score[ht-1][lh] += 1; score[ht-1][0] += 1; score[ht][lh-1] += 1; score[ht][0] += 1; score[0][lh-1] += 1; score[0][lh] += 1}
+
+		for (var i = 0; i <= ht; i++) {
+			for (var j = 1; j < lh; j++) {
+				if (cst[i][j] > 0) {passScore(i, j)}
+			}}
+
+		for (var i = 1; i < ht; i++) {
+			if (cst[i][0] > 0) {leftColPass(i, 0)}
+		}
+
+		for (var i = 1; i < ht; i++) {
+			if (cst[i][lh] > 0) {rightColPass(i, lh)}
+		}
+
+			for (var i = 0; i < score.length; i++) {
+				for (var j = 0; j < score[i].length; j++) {
+					if (cst[i][j] == 0 && score[i][j] == 0) {}//{fts[i][j] = 0} // stay empty
+					else if (cst[i][j] >= 1 && (score[i][j] > 3 || score[i][j] < 2)) {fts[i][j] = -35} // die
+					else if (cst[i][j] <= 0 && score[i][j] == 3) {fts[i][j] = 1} // born
+					else if (cst[i][j] >= 1 && (score[i][j] == 2 || score[i][j] == 3)) {fts[i][j] += 1} // stay alive
+					else if (cst[i][j] < 0) {fts[i][j] += 1} // was dead ------ must stay last
+				}
+			}
+
+			if (this.state.params.randomBirth && this.state.cycles % 10 == 0) {
+				var h = Math.floor(Math.random() * ht);
+				var l = Math.floor(Math.random() * lh);
+				if (fts[h][l] < 1){fts[h][l] = 1}
+			}
+		return fts;
 	}
 
 	clickCell(r, c) {
@@ -248,8 +246,15 @@ class Main extends React.Component {
 	}
 
 	randomize() {
-		randomizeGrid();
-		this.setState({gridState: mem.randGrid, cycles: 0})
+		var pars = this.state.params;
+		this.setState({
+			gridState: randomizeGrid(
+				pars.height,
+				pars.length,
+				pars.spawnRate
+			),
+			cycles: 0
+		})
 	}
 
 	paramsUpdate(p) {
@@ -258,9 +263,8 @@ class Main extends React.Component {
 
 	nextCycle() {
 		if (!this.state.params.isPoused) {
-			mem.cycles += 1;
 			this.setState({
-				gridState: genNextGridState(this.state.gridState),
+				gridState: this.genNextGridState(this.state.gridState),
 				cycles: this.state.cycles + 1
 			});
 		}
